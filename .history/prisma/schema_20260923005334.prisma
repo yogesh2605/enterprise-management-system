@@ -1,0 +1,7 @@
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}New-Item prisma.config.ts -ItemType File

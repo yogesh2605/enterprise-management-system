@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  password     String
+  role         Role       @default(EMPLOYEE)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  employee     Employee?
+  createdTasks Task[]     @relation("TaskCreator")
+  assignedTasks Task[]    @relation("TaskAssignee")
+  leaveRequests Leave[]
+  notifications Notification[]
+  auditLogs    AuditLog[]
+}
+
+model Employee {
+  id          Int      @id @default(autoincrement())
+  employeeId  String   @unique
+  firstName   String
+  lastName    String
+  department  String
+  designation String
+  phone       String?
+  joiningDate DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  managedTasks Task[] @relation("TaskManager")
+}
+
+model Task {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  creatorId   Int
+  creator     User         @relation("TaskCreator", fields: [creatorId], references: [id])
+
+  assigneeId  Int
+  assignee    User         @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  managerId   Int?
+  manager     Employee?    @relation("TaskManager", fields: [managerId], references: [id])
+}
+
+model Leave {
+  id          Int         @id @default(autoincrement())
+  leaveType   String
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  status      LeaveStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String
+  entity    String
+  entityId  Int?
+  details   String?
+  createdAt DateTime @default(now())
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
